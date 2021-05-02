@@ -80,6 +80,7 @@ class _HomePageState extends State<HomePage> {
 
 class RandomWordsListPage extends StatefulWidget {
   final bool _filter;
+
   RandomWordsListPage(this._filter);
 
   @override
@@ -145,8 +146,18 @@ class _RandomWordsListPageState extends State<RandomWordsListPage> {
   Widget _buildRow(int index, WordPair wordPair) {
     return ListTile(
       title: Text('$index. ${asString(wordPair)}'),
-      trailing: _icons[wordPairs[wordPair]],
-      onTap: () => _toggle(wordPair),
+      trailing: new Column(
+        children: <Widget>[
+          new Container(
+            child: new IconButton(
+              icon: _icons[wordPairs[wordPair]],
+              onPressed: () {
+                _toggle(wordPair);
+              },
+            ),
+          )
+        ],
+      ),
     );
   }
 }
