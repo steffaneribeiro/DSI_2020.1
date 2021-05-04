@@ -100,7 +100,7 @@ class _RandomWordsListPageState extends State<RandomWordsListPage> {
     if (widget._filter == null) {
       return wordPairs.keys;
     } else {
-      //a linah aabaixo retorna os pares filtras opelo filtro
+      //a linha abaixo retorna os pares filtrados pelo filtro
       return wordPairs.entries
           .where((element) => element.value == widget._filter)
           .map((e) => e.key);
@@ -143,21 +143,46 @@ class _RandomWordsListPageState extends State<RandomWordsListPage> {
         });
   }
 
-  Widget _buildRow(int index, WordPair wordPair) {
-    return ListTile(
-      title: Text('$index. ${asString(wordPair)}'),
-      trailing: new Column(
-        children: <Widget>[
-          new Container(
-            child: new IconButton(
-              icon: _icons[wordPairs[wordPair]],
-              onPressed: () {
-                _toggle(wordPair);
-              },
-            ),
-          )
-        ],
+  Widget refreshBg() {
+    return Container(
+      alignment: Alignment.centerRight,
+      padding: EdgeInsets.only(right: 20.0),
+      color: Colors.red,
+      child: const Icon(
+        Icons.delete,
+        color: Colors.white,
       ),
     );
+  }
+
+  Widget _buildRow(int index, WordPair wordPair) {
+    return Dismissible(
+        key: Key(wordPair.toString()),
+        direction: DismissDirection.endToStart,
+        onDismissed: (direction) {
+          Scaffold.of(context).showSnackBar(SnackBar(
+            content: Text('${asString(wordPair).toUpperCase()} deletado'),
+          ));
+          setState(() {
+            wordPairs.remove(wordPair);
+          });
+        },
+        background: refreshBg(),
+          child: ListTile(
+            title: Text('$index. ${asString(wordPair)}'),
+            trailing: new Column(
+              children: <Widget>[
+                new Container(
+                  child: new IconButton(
+                    icon: _icons[wordPairs[wordPair]],
+                    onPressed: () {
+                      _toggle(wordPair);
+                    },
+                  ),
+                )
+              ],
+            ),
+          ),
+        );
   }
 }
