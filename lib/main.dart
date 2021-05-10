@@ -44,7 +44,6 @@ import 'package:flutter/material.dart';
 /// em um App Flutter. Além disso, é criada a tela de atualização do par de palavras.
 /// Acesse: https://flutter.dev/docs/cookbook/navigation/named-routes
 void main() {
-
   initWordPairs();
   runApp(DSIApp());
 }
@@ -56,10 +55,12 @@ void initWordPairs() {
     wordPairs.add(DSIWordPair());
   }
   wordPairs.sort();
+  filteredWord = wordPairs;
 }
 
 ///Lista de pares de palavras ([DSIWordPair]) .
 List<DSIWordPair> wordPairs;
+List<DSIWordPair> filteredWord;
 
 /// Função que deixa uma string com a primeira letra maiúscula.
 String capitalize(String s) {
@@ -146,7 +147,6 @@ class HomePage extends StatefulWidget {
 
 ///O estado equivalente ao [StatefulWidget] [HomePage].
 class _HomePageState extends State<HomePage> {
-
   ///A página atual em que o [BottomNavigationBar] se encontra.
   int _pageIndex = 0;
 
@@ -270,16 +270,41 @@ class _WordPairListPageState extends State<WordPairListPage> {
   ///inclua um separador ([Divider]) na listagem.
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: items.length * 2,
-        itemBuilder: (BuildContext _context, int i) {
-          if (i.isOdd) {
-            return Divider();
-          }
-          final int index = i ~/ 2;
-          return _buildRow(context, index + 1, items.elementAt(index));
-        });
+    return Column(
+      children: [
+        Padding(
+            padding: const EdgeInsets.all(7.0),
+            child: TextField(
+              decoration: InputDecoration(
+                  labelText: "Procurar palavra",
+                  hintText: "Informe a palavra",
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(25.0)))),
+              onChanged: (text) {
+                setState(() {
+                  filteredWord = wordPairs
+                      .where((element) =>
+                          element.first.toLowerCase().contains(text) ||
+                          element.second.toLowerCase().contains(text))
+                      .toList();
+                });
+              },
+            )),
+        Expanded(
+            child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: filteredWord.length * 2,
+                itemBuilder: (BuildContext _context, int i) {
+                  if (i.isOdd) {
+                    return Divider();
+                  }
+                  final int index = i ~/ 2;
+                  return _buildRow(
+                      context, index + 1, filteredWord.elementAt(index));
+                })),
+      ],
+    );
   }
 
   Widget refreshBg() {
@@ -305,6 +330,7 @@ class _WordPairListPageState extends State<WordPairListPage> {
         ));
         setState(() {
           wordPairs.remove(wordPair);
+          filteredWord.remove(wordPair);
         });
       },
       background: refreshBg(),
@@ -322,7 +348,7 @@ class _WordPairListPageState extends State<WordPairListPage> {
             )
           ],
         ),
-        onTap: () =>  _updateWordPair(context, wordPair),
+        onTap: () => _updateWordPair(context, wordPair),
       ),
     );
   }
@@ -330,7 +356,8 @@ class _WordPairListPageState extends State<WordPairListPage> {
   ///Exibe a tela de atualização do par de palavras.
   _updateWordPair(BuildContext context, DSIWordPair wordPair) {
     Navigator.pushNamed(context, WordPairUpdatePage.routeName,
-        arguments: wordPair).then((value) => setState((){}));
+            arguments: wordPair)
+        .then((value) => setState(() {}));
   }
 }
 
@@ -367,7 +394,6 @@ class _WordPairUpdatePageState extends State<WordPairUpdatePage> {
 
   ///Método utilizado para criar o corpo da tela de atualização do par de palavras.
   _buildForm(BuildContext context) {
-    final word= _wordPair;
     return Form(
       key: _formKey,
       child: Wrap(
