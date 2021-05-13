@@ -61,6 +61,7 @@ void initWordPairs() {
 ///Lista de pares de palavras ([DSIWordPair]) .
 List<DSIWordPair> wordPairs;
 List<DSIWordPair> filteredWord;
+String textFilter = "";
 
 /// Função que deixa uma string com a primeira letra maiúscula.
 String capitalize(String s) {
@@ -244,7 +245,9 @@ class _WordPairListPageState extends State<WordPairListPage> {
       result = wordPairs;
     } else {
       result = wordPairs
-          .where((element) => element.favourite == widget._filter)
+          .where((element) =>
+              element.favourite == widget._filter &&(element.first.toLowerCase().contains(textFilter) ||
+                  element.second.toLowerCase().contains(textFilter)))
           .toList();
     }
     return result;
@@ -265,6 +268,16 @@ class _WordPairListPageState extends State<WordPairListPage> {
     setState(() {});
   }
 
+  _itemCount() {
+    int count;
+    if (widget._filter == null) {
+      count = filteredWord.length * 2;
+    } else {
+      count = items.length * 2;
+    }
+    return count;
+  }
+
   ///Constroi a listagem de itens.
   ///Note que é dobrada a quantidade de itens, para que a cada índice par, se
   ///inclua um separador ([Divider]) na listagem.
@@ -283,6 +296,7 @@ class _WordPairListPageState extends State<WordPairListPage> {
                       borderRadius: BorderRadius.all(Radius.circular(25.0)))),
               onChanged: (text) {
                 setState(() {
+                  textFilter = text;
                   filteredWord = wordPairs
                       .where((element) =>
                           element.first.toLowerCase().contains(text) ||
@@ -294,14 +308,19 @@ class _WordPairListPageState extends State<WordPairListPage> {
         Expanded(
             child: ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: filteredWord.length * 2,
+                itemCount: _itemCount(),
                 itemBuilder: (BuildContext _context, int i) {
                   if (i.isOdd) {
                     return Divider();
                   }
                   final int index = i ~/ 2;
-                  return _buildRow(
-                      context, index + 1, filteredWord.elementAt(index));
+                  if (widget._filter == null) {
+                    return _buildRow(
+                        context, index + 1, filteredWord.elementAt(index));
+                  } else {
+                    return _buildRow(
+                        context, index + 1, items.elementAt(index));
+                  }
                 })),
       ],
     );
