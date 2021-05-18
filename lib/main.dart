@@ -1,4 +1,8 @@
+import 'dart:async';
+
+import 'package:atividades_dsi/view/word_pair_view.dart';
 import 'package:english_words/english_words.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 ///TPC-2 (branch_wordPairs1):
@@ -43,78 +47,104 @@ import 'package:flutter/material.dart';
 /// Esta atualização inclui a parte de rotas, que permite navegar entre as telas
 /// em um App Flutter. Além disso, é criada a tela de atualização do par de palavras.
 /// Acesse: https://flutter.dev/docs/cookbook/navigation/named-routes
+///
+///TPC-4 (branch_wordPairs4):
+/// Esta atualização ajusta o código para utilizar os padrões
+/// MVC (Model-View-Controller) e Singleton.
+/// Acesse:
+/// https://pt.wikipedia.org/wiki/MVC
+/// https://pt.wikipedia.org/wiki/Singleton
+///
+///TPC-5 (branch_wordPairs5):
+/// Persistência dos dados com o Firebase.
+/// Veja os ajustes feitos em: pubspec.yaml,
+/// Acesse:
+/// https://firebase.flutter.dev/docs/overview/
+/// https://firebase.flutter.dev/docs/installation/android/
+///
+/// ATENÇÃO:
+/// -Configure o plugin no pubspec.yaml
+/// -Adicione o android/app/google-services.json no projeto (gerar no Firebase Console)
+/// -atualize o android/build.gradle com as informações dos serviços do google
+/// -atualize o android/app/build.gradle
 void main() {
-  initWordPairs();
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(DSIApp());
 }
 
-///Inicializa a lista com os pares de palavras.
-void initWordPairs() {
-  wordPairs = <DSIWordPair>[];
-  for (var i = 0; i < 20; i++) {
-    wordPairs.add(DSIWordPair());
-  }
-  wordPairs.sort();
-  filteredWord = wordPairs;
-}
-
-///Lista de pares de palavras ([DSIWordPair]) .
-List<DSIWordPair> wordPairs;
-List<DSIWordPair> filteredWord;
-String textFilter = "";
-
-/// Função que deixa uma string com a primeira letra maiúscula.
-String capitalize(String s) {
-  return '${s[0].toUpperCase()}${s.substring(1)}';
-}
-
-///Esta classe é uma implementação própria do [WordPair], incluindo outros
-///atributos e métodos necessários para o App.
-class DSIWordPair extends Comparable<DSIWordPair> {
-  ///A primeira palavra do par.
-  String first;
-
-  ///A segunda palavra do par.
-  String second;
-
-  ///Booleano que pode ser [null], indicando se o par de palavras é
-  ///favoritado ou não.
-  bool favourite;
-
-  ///Construtor da classe
-  DSIWordPair() {
-    WordPair wordPair = WordPair.random();
-    this.first = capitalize(wordPair.first);
-    this.second = capitalize(wordPair.second);
-  }
-
-  ///Este método foi sobrescrito para customizar a conversão de um objeto desta
-  ///calsse para String
-  @override
-  String toString() {
-    return '${this.first} ${this.second}';
-  }
-
-  ///Compara dois pares de palavras.
-  ///Retorna:
-  ///-1 se [a] for menor que [b];
-  ///0 se [a] for igual [b];
-  ///1 se [a] for maior que [b];
-  @override
-  int compareTo(DSIWordPair that) {
-    int result = this.first.toLowerCase().compareTo(that.first.toLowerCase());
-    if (result == 0) {
-      result = this.second.toLowerCase().compareTo(that.second.toLowerCase());
-    }
-    return result;
-  }
-}
-
 ///Classe principal que representa o App.
-class DSIApp extends StatelessWidget {
-  ///Constrói o App e suas configurações.
+///O uso do widget do tipo Stateful evita a reinicialização do Firebase
+///cada vez que o App é reconstruído.
+class DSIApp extends StatefulWidget {
+  ///Cria o estado do app.
+  @override
+  _DSIAppState createState() => _DSIAppState();
+}
+
+///O estado do app.
+class _DSIAppState extends State<DSIApp> {
+  final Future<FirebaseApp> _initialization = Firebase.initializeApp();
+
+  ///Constrói o App a partir do FutureBuilder, após o carregamento do Firebase.
   @override
   Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: _initialization,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return _buildError(context);
+        }
+
+        if (snapshot.connectionState == ConnectionState.done) {
+          return _buildApp(context);
+        }
+
+        return _buildLoading(context);
+      },
+    );
+  }
+
+  ///Constroi o componente que apresenta o erro no carregamento do Firebase.
+  Widget _buildError(context) {
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Center(
+        child: Text(
+          'Erro ao carregar os dados do App.\n'
+          'Tente novamente mais tarde.',
+          style: TextStyle(
+            color: Colors.red,
+            fontSize: 16.0,
+          ),
+        ),
+      ),
+    );
+  }
+
+  ///Constrói o componente de load.
+  Widget _buildLoading(context) {
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Center(
+        child: Row(
+          children: <Widget>[
+            CircularProgressIndicator(),
+            Text(
+              'carregando...',
+              style: TextStyle(
+                color: Colors.green,
+                fontSize: 16.0,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  ///Constrói o App e suas configurações.
+  Widget _buildApp(context) {
     return MaterialApp(
       title: 'DSI App (BSI UFRPE)',
       theme: ThemeData(
@@ -132,337 +162,5 @@ class DSIApp extends StatelessWidget {
     return {
       WordPairUpdatePage.routeName: (context) => WordPairUpdatePage(),
     };
-  }
-}
-
-///Página inicial que apresenta o [BottomNavigationBar], onde cada
-///[BottomNavigationBarItem] é uma página do tipo [WordPairListPage].
-class HomePage extends StatefulWidget {
-  ///Nome da rota referente à página Home.
-  static const routeName = '/';
-
-  ///Cria o estado da página Home.
-  @override
-  _HomePageState createState() => _HomePageState();
-}
-
-///O estado equivalente ao [StatefulWidget] [HomePage].
-class _HomePageState extends State<HomePage> {
-  ///A página atual em que o [BottomNavigationBar] se encontra.
-  int _pageIndex = 0;
-
-  ///As 3 páginas do [HomePage].
-  ///A primeira apresenta todas as palavras, a segunda apresenta as palavras que
-  ///o usuário gosta e a terceira apresenta as palavras que o usuário não gosta.
-  List<Widget> _pages = [
-    WordPairListPage(null),
-    WordPairListPage(true),
-    WordPairListPage(false)
-  ];
-
-  ///Método utilizado para alterar a página atual do [HomePage].
-  void _changePage(int value) {
-    setState(() {
-      _pageIndex = value;
-    });
-  }
-
-  ///Constroi a tela do [HomePage], incluindo um [BottomNavigationBar]
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('DSI App (BSI UFRPE)'),
-      ),
-      body: _pages[_pageIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        onTap: _changePage,
-        currentIndex: _pageIndex,
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Todas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.thumb_up_outlined),
-            label: 'Curti',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.thumb_down_outlined),
-            label: 'Não Curti',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-///Página que apresenta a listagem de palavras.
-class WordPairListPage extends StatefulWidget {
-  ///atributo que determina as palavras que serão exibidas na listagem.
-  ///
-  ///[null]: todas as palavras.
-  ///[true]: palavras que gosta.
-  ///[false]: palavras que não gosta.
-  final bool _filter;
-
-  ///Construtor da classe
-  WordPairListPage(this._filter);
-
-  ///Método responsável por criar o objeto estado.
-  @override
-  _WordPairListPageState createState() => _WordPairListPageState();
-}
-
-///Esta classe é o estado da classe [WordPairListPage].
-class _WordPairListPageState extends State<WordPairListPage> {
-  ///Map com os ícones utilizados no [BottomNavigationBar].
-  final _icons = {
-    null: Icon(Icons.thumbs_up_down_outlined),
-    true: Icon(Icons.thumb_up, color: Colors.blue),
-    false: Icon(Icons.thumb_down, color: Colors.red),
-  };
-
-  ///Este método é sobrescrito para atualizar a ordem da lista, sempre que a
-  ///tela for exibida. A inicialização dos atributos do estado sempre devem
-  ///ser feitas no método [initState] do Flutter.
-  @override
-  void initState() {
-    super.initState();
-    wordPairs.sort();
-  }
-
-  ///Método getter para retornar os itens. Os itens são ordenados utilizando a
-  ///ordenação definida na classe [DSIWordPair].
-  ///
-  ///Dependendo do que está setado no atributo [widget._filter], este método
-  ///retorna todas as palavras, as palavras curtidas ou as palavras não curtidas.
-  ///Veja:
-  /// https://dart.dev/guides/language/language-tour#getters-and-setters
-  Iterable<DSIWordPair> get items {
-    List<DSIWordPair> result;
-    if (widget._filter == null) {
-      result = wordPairs;
-    } else {
-      result = wordPairs
-          .where((element) =>
-              element.favourite == widget._filter &&(element.first.toLowerCase().contains(textFilter) ||
-                  element.second.toLowerCase().contains(textFilter)))
-          .toList();
-    }
-    return result;
-  }
-
-  ///Altera o estado de curtida da palavra.
-  _toggleFavourite(DSIWordPair wordPair) {
-    bool like = wordPair.favourite;
-    if (widget._filter != null) {
-      wordPair.favourite = null;
-    } else if (like == null) {
-      wordPair.favourite = true;
-    } else if (like == true) {
-      wordPair.favourite = false;
-    } else {
-      wordPair.favourite = null;
-    }
-    setState(() {});
-  }
-
-  _itemCount() {
-    int count;
-    if (widget._filter == null) {
-      count = filteredWord.length * 2;
-    } else {
-      count = items.length * 2;
-    }
-    return count;
-  }
-
-  ///Constroi a listagem de itens.
-  ///Note que é dobrada a quantidade de itens, para que a cada índice par, se
-  ///inclua um separador ([Divider]) na listagem.
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-            padding: const EdgeInsets.all(7.0),
-            child: TextField(
-              decoration: InputDecoration(
-                  labelText: "Procurar palavra",
-                  hintText: "Informe a palavra",
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(25.0)))),
-              onChanged: (text) {
-                setState(() {
-                  textFilter = text;
-                  filteredWord = wordPairs
-                      .where((element) =>
-                          element.first.toLowerCase().contains(text) ||
-                          element.second.toLowerCase().contains(text))
-                      .toList();
-                });
-              },
-            )),
-        Expanded(
-            child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _itemCount(),
-                itemBuilder: (BuildContext _context, int i) {
-                  if (i.isOdd) {
-                    return Divider();
-                  }
-                  final int index = i ~/ 2;
-                  if (widget._filter == null) {
-                    return _buildRow(
-                        context, index + 1, filteredWord.elementAt(index));
-                  } else {
-                    return _buildRow(
-                        context, index + 1, items.elementAt(index));
-                  }
-                })),
-      ],
-    );
-  }
-
-  Widget refreshBg() {
-    return Container(
-      alignment: Alignment.centerRight,
-      padding: EdgeInsets.only(right: 20.0),
-      color: Colors.red,
-      child: const Icon(
-        Icons.delete,
-        color: Colors.white,
-      ),
-    );
-  }
-
-  ///Constroi uma linha da listagem a partir do par de palavras e do índice.
-  Widget _buildRow(BuildContext context, int index, DSIWordPair wordPair) {
-    return Dismissible(
-      key: Key(wordPair.toString()),
-      direction: DismissDirection.endToStart,
-      onDismissed: (direction) {
-        Scaffold.of(context).showSnackBar(SnackBar(
-          content: Text('${wordPair} deletado'),
-        ));
-        setState(() {
-          wordPairs.remove(wordPair);
-          filteredWord.remove(wordPair);
-        });
-      },
-      background: refreshBg(),
-      child: ListTile(
-        title: Text('$index. ${wordPair}'),
-        trailing: new Column(
-          children: <Widget>[
-            new Container(
-              child: new IconButton(
-                icon: _icons[wordPair.favourite],
-                onPressed: () {
-                  _toggleFavourite(wordPair);
-                },
-              ),
-            )
-          ],
-        ),
-        onTap: () => _updateWordPair(context, wordPair),
-      ),
-    );
-  }
-
-  ///Exibe a tela de atualização do par de palavras.
-  _updateWordPair(BuildContext context, DSIWordPair wordPair) {
-    Navigator.pushNamed(context, WordPairUpdatePage.routeName,
-            arguments: wordPair)
-        .then((value) => setState(() {}));
-  }
-}
-
-///Página que apresenta a tela de atualização do par de palavras.
-class WordPairUpdatePage extends StatefulWidget {
-  static const routeName = '/wordpair/update';
-
-  ///Construtor da classe
-  WordPairUpdatePage();
-
-  ///Cria o estado da página de atualização de palavras.
-  @override
-  _WordPairUpdatePageState createState() => _WordPairUpdatePageState();
-}
-
-///Esta classe é o estado da classe que atualiza os pares de palavras.
-class _WordPairUpdatePageState extends State<WordPairUpdatePage> {
-  final _formKey = GlobalKey<FormState>();
-  DSIWordPair _wordPair;
-  String _newFirst;
-  String _newSecond;
-
-  ///Método responsável por criar a tela de atualização do par de palavras.
-  @override
-  Widget build(BuildContext context) {
-    _wordPair = ModalRoute.of(context).settings.arguments;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('DSI App (BSI UFRPE)'),
-      ),
-      body: _buildForm(context),
-    );
-  }
-
-  ///Método utilizado para criar o corpo da tela de atualização do par de palavras.
-  _buildForm(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        runSpacing: 16.0,
-        children: <Widget>[
-          TextFormField(
-            keyboardType: TextInputType.text,
-            decoration: const InputDecoration(labelText: 'Primeira*'),
-            validator: (String value) {
-              return value.isEmpty ? 'Palavra inválida.' : null;
-            },
-            onSaved: (newValue) => _newFirst = newValue,
-            initialValue: _wordPair.first,
-          ),
-          TextFormField(
-            keyboardType: TextInputType.text,
-            decoration: const InputDecoration(labelText: 'Segunda*'),
-            validator: (String value) {
-              return value.isEmpty ? 'Palavra inválida.' : null;
-            },
-            onSaved: (newValue) => _newSecond = newValue,
-            initialValue: _wordPair.second,
-          ),
-          SizedBox(
-            width: double.infinity,
-          ),
-          ElevatedButton(
-            child: Text('Salvar'),
-            onPressed: () => _save(context),
-          ),
-        ],
-      ),
-    );
-  }
-
-  ///Método que valida o formulário e salva os dados no par de palavras.
-  void _save(BuildContext context) {
-    if (!_formKey.currentState.validate()) return;
-    setState(() {
-      _formKey.currentState.save();
-      _updateWordPair();
-    });
-    Navigator.pop(context, HomePage.routeName);
-  }
-
-  ///Recupera os dados que os campos de texto atualizaram nos atributos da classe
-  ///e atualiza o par de palavras.
-  void _updateWordPair() {
-    _wordPair.first = _newFirst;
-    _wordPair.second = _newSecond;
   }
 }

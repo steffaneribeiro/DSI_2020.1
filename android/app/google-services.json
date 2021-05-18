@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1016024302856",
+    "project_id": "projeto-dsi-ec210",
+    "storage_bucket": "projeto-dsi-ec210.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1016024302856:android:f09a48f0de54e3ea8598bd",
+        "android_client_info": {
+          "package_name": "com.example.atividades_dsi"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1016024302856-ppc9oajprj74tlr9gs5ia8l9olg8lgsf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmyWxoKKwmVW3QRyJN6fUVNtCyhlryIXg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1016024302856-ppc9oajprj74tlr9gs5ia8l9olg8lgsf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
