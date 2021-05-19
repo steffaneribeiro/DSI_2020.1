@@ -223,16 +223,40 @@ class _WordPairListPageState extends State<WordPairListPage> {
     );
   }
 
+  Widget refreshBg() {
+    return Container(
+      alignment: Alignment.centerRight,
+      padding: EdgeInsets.only(right: 20.0),
+      color: Colors.red,
+      child: const Icon(
+        Icons.delete,
+        color: Colors.white,
+      ),
+    );
+  }
+
   ///Constroi uma linha da listagem a partir do par de palavras e do índice.
   Widget _buildRow(BuildContext context, int index, DSIWordPair wordPair) {
-    return ListTile(
-      title: Text('$index. ${wordPair}'),
-      trailing: TextButton(
-        onPressed: () => _toggleFavourite(context, wordPair),
-        child: _icons[wordPair.favourite],
-      ),
-      onTap: () => _updateWordPair(context, wordPair),
-    );
+    return Dismissible(
+        key: Key(wordPair.toString()),
+        direction: DismissDirection.endToStart,
+        onDismissed: (direction) {
+          Scaffold.of(context).showSnackBar(SnackBar(
+            content: Text('${wordPair} deletado'),
+          ));
+          setState(() {
+            _controller.delete(wordPair);
+          });
+        },
+        background: refreshBg(),
+        child: ListTile(
+          title: Text('$index. ${wordPair}'),
+          trailing: TextButton(
+            onPressed: () => _toggleFavourite(context, wordPair),
+            child: _icons[wordPair.favourite],
+          ),
+          onTap: () => _updateWordPair(context, wordPair),
+        ));
   }
 
   ///Exibe a tela de atualização do par de palavras.
